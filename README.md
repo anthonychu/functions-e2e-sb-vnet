@@ -90,7 +90,7 @@ To set up this sample, follow these steps:
 
 1. You can use the Service Bus Explorer in the Azure Portal to send messages to the Service Bus queue. You'll need to configure your client IP Address in the Service Bus firewall first:
 ![Service Bus networking page adding client IP address to firewall](./img/sb-addclientip.png)
-You can then follow [https://learn.microsoft.com/en-us/azure/service-bus-messaging/explorer](Use Service Bus Explorer to run data operations on Service Bus) to send messages and peek messages from the queue.
+You can then follow [Use Service Bus Explorer to run data operations on Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/explorer) to send messages and peek messages from the queue.
 ![Service Bus explorer showing messages in the queue](./img/sb-messages.png)
 1. Use the Service Bus Explorer in the portal or app to send 1,000 messages.
 1. Open Application Insights live metrics and notice the number of instances ('servers online'). Notice your app scaling the number of instances to handle processing the messages. Given there is a purpuseful [30 second delay in the app code](./src/function_app.py#L12) you should see the messages being processed in 30 seconds intervals once the the app's maximum instance count (default of 100) is reached. The sample telemetry should also show that your messages are triggering the function, and making their way from Service Bus through the VNet into the function app for processing.
