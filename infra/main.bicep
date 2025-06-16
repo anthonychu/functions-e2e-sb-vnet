@@ -163,13 +163,46 @@ module ServiceBusDataOwnerRoleAssignment 'app/servicebus-Access.bicep' = [for ro
 }]
 
 // Virtual Network & private endpoint
-module serviceVirtualNetwork 'app/vnet.bicep' = {
+module serviceVirtualNetwork './avm/network/virtual-network.bicep' = {
   name: 'serviceVirtualNetwork'
   scope: rg
   params: {
+    name: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
     location: location
     tags: tags
-    vNetName: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
+    addressPrefixes: [
+      '10.0.0.0/16'
+    ]
+    subnets: [
+      {
+        name: 'sb'
+        addressPrefix: '10.0.1.0/24'
+        delegations: []
+        privateEndpointNetworkPolicies: 'Disabled'
+        privateLinkServiceNetworkPolicies: 'Enabled'
+      }
+      {
+        name: 'app'
+        addressPrefix: '10.0.2.0/23'
+        delegations: [
+          {
+            name: 'delegation'
+            properties: {
+              serviceName: 'Microsoft.App/environments'
+            }
+          }
+        ]
+        privateEndpointNetworkPolicies: 'Disabled'
+        privateLinkServiceNetworkPolicies: 'Enabled'
+      }
+      {
+        name: 'st'
+        addressPrefix: '10.0.4.0/24'
+        delegations: []
+        privateEndpointNetworkPolicies: 'Disabled'
+        privateLinkServiceNetworkPolicies: 'Enabled'
+      }
+    ]
   }
 }
 
