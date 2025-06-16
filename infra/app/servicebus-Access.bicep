@@ -12,6 +12,5 @@ resource ServiceBusRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-
   properties: {
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleDefinitionId)
     principalId: principalId
-    principalType: 'ServicePrincipal'
   }
 }]
