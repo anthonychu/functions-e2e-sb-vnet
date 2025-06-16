@@ -14,5 +14,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2021-09-01' existing 
   properties: {
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleId)
     principalId: principalId
+    principalType: 'ServicePrincipal'
   }
 }]

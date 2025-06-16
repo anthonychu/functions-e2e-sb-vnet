@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "7505188658077028784"
+      "templateHash": "5487726734910653414"
     }
   },
   "parameters": {
@@ -5802,7 +5802,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "16357415700776342918"
+              "templateHash": "10354551318222050374"
             }
           },
           "parameters": {
@@ -5828,7 +5828,8 @@
               "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), parameters('principalIds')[copyIndex()], parameters('roleId'))]",
               "properties": {
                 "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', parameters('roleId'))]",
-                "principalId": "[parameters('principalIds')[copyIndex()]]"
+                "principalId": "[parameters('principalIds')[copyIndex()]]",
+                "principalType": "ServicePrincipal"
               }
             }
           ]
@@ -10697,7 +10698,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "17763795856706489927"
+              "templateHash": "541333386583665223"
             }
           },
           "parameters": {
@@ -10723,7 +10724,8 @@
               "name": "[guid(resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusNamespaceName')), parameters('principalIds')[copyIndex()], parameters('roleDefinitionId'))]",
               "properties": {
                 "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', parameters('roleDefinitionId'))]",
-                "principalId": "[parameters('principalIds')[copyIndex()]]"
+                "principalId": "[parameters('principalIds')[copyIndex()]]",
+                "principalType": "ServicePrincipal"
               }
             }
           ]
