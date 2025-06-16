@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "697002409871513209"
+      "templateHash": "11688025352285433947"
     }
   },
   "parameters": {
@@ -5799,12 +5799,7 @@
           "roleId": {
             "value": "[variables('roleIds')[copyIndex()]]"
           },
-          "principalIds": {
-            "value": [
-              "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'processorUserAssignedIdentity'), '2022-09-01').outputs.principalId.value]",
-              "[parameters('principalId')]"
-            ]
-          }
+          "principalIds": "[if(not(empty(parameters('principalId'))), createObject('value', createArray(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'processorUserAssignedIdentity'), '2022-09-01').outputs.principalId.value, parameters('principalId'))), createObject('value', createArray(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'processorUserAssignedIdentity'), '2022-09-01').outputs.principalId.value)))]"
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
@@ -10701,12 +10696,7 @@
           "roleDefinitionId": {
             "value": "[variables('ServiceBusRoleDefinitionIds')[copyIndex()]]"
           },
-          "principalIds": {
-            "value": [
-              "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'processorUserAssignedIdentity'), '2022-09-01').outputs.principalId.value]",
-              "[parameters('principalId')]"
-            ]
-          }
+          "principalIds": "[if(not(empty(parameters('principalId'))), createObject('value', createArray(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'processorUserAssignedIdentity'), '2022-09-01').outputs.principalId.value, parameters('principalId'))), createObject('value', createArray(reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'processorUserAssignedIdentity'), '2022-09-01').outputs.principalId.value)))]"
         },
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",

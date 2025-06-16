@@ -35,7 +35,7 @@ var appName = !empty(processorServiceName) ? processorServiceName : '${abbrs.web
 var deploymentStorageContainerName = 'app-package-${take(appName, 32)}-${take(resourceToken, 7)}'
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
-var principalIds = [processorUserAssignedIdentity.outputs.principalId, principalId]
+var principalIds = !empty(principalId) ? [processorUserAssignedIdentity.outputs.principalId, principalId] : [processorUserAssignedIdentity.outputs.principalId]
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
