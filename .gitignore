@@ -396,3 +396,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Bicep compiled ARM templates
+infra/**/*.json
+!infra/main.json
+!infra/main.parameters.json
