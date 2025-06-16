@@ -95,6 +95,7 @@ module storage 'br/public:avm/res/storage/storage-account:0.8.3' = {
       bypass: 'None'
     } : {
       defaultAction: 'Allow'
+      bypass: 'AzureServices'
     }
     blobServices: {
       containers: [

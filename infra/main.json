@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "7732202408814837203"
+      "templateHash": "7505188658077028784"
     }
   },
   "parameters": {
@@ -1122,7 +1122,7 @@
             "value": "[variables('tags')]"
           },
           "publicNetworkAccess": "[if(parameters('vnetEnabled'), createObject('value', 'Disabled'), createObject('value', 'Enabled'))]",
-          "networkAcls": "[if(parameters('vnetEnabled'), createObject('value', createObject('defaultAction', 'Deny', 'bypass', 'None')), createObject('value', createObject('defaultAction', 'Allow')))]",
+          "networkAcls": "[if(parameters('vnetEnabled'), createObject('value', createObject('defaultAction', 'Deny', 'bypass', 'None')), createObject('value', createObject('defaultAction', 'Allow', 'bypass', 'AzureServices')))]",
           "blobServices": {
             "value": {
               "containers": [
