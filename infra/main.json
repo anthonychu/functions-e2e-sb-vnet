@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "11688025352285433947"
+      "templateHash": "7732202408814837203"
     }
   },
   "parameters": {
@@ -79,6 +79,9 @@
     "vNetName": {
       "type": "string",
       "defaultValue": ""
+    },
+    "vnetEnabled": {
+      "type": "bool"
     },
     "principalId": {
       "type": "string",
@@ -774,9 +777,7 @@
           "appSettings": {
             "value": {}
           },
-          "virtualNetworkSubnetId": {
-            "value": "[format('{0}/subnets/app', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'serviceVirtualNetwork'), '2022-09-01').outputs.resourceId.value)]"
-          },
+          "virtualNetworkSubnetId": "[if(parameters('vnetEnabled'), createObject('value', format('{0}/subnets/app', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'serviceVirtualNetwork'), '2022-09-01').outputs.resourceId.value)), createObject('value', ''))]",
           "serviceBusQueueName": "[if(not(empty(parameters('serviceBusQueueName'))), createObject('value', parameters('serviceBusQueueName')), createObject('value', format('{0}{1}', variables('abbrs').serviceBusNamespacesQueues, variables('resourceToken'))))]",
           "serviceBusNamespaceFQDN": {
             "value": "[format('{0}.servicebus.windows.net', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'serviceBus'), '2022-09-01').outputs.name.value)]"
@@ -1120,15 +1121,8 @@
           "tags": {
             "value": "[variables('tags')]"
           },
-          "publicNetworkAccess": {
-            "value": "Disabled"
-          },
-          "networkAcls": {
-            "value": {
-              "defaultAction": "Deny",
-              "bypass": "None"
-            }
-          },
+          "publicNetworkAccess": "[if(parameters('vnetEnabled'), createObject('value', 'Disabled'), createObject('value', 'Enabled'))]",
+          "networkAcls": "[if(parameters('vnetEnabled'), createObject('value', createObject('defaultAction', 'Deny', 'bypass', 'None')), createObject('value', createObject('defaultAction', 'Allow')))]",
           "blobServices": {
             "value": {
               "containers": [
@@ -6378,9 +6372,7 @@
               "name": "Premium"
             }
           },
-          "publicNetworkAccess": {
-            "value": "Disabled"
-          },
+          "publicNetworkAccess": "[if(parameters('vnetEnabled'), createObject('value', 'Disabled'), createObject('value', 'Enabled'))]",
           "queues": {
             "value": [
               {
@@ -10744,6 +10736,7 @@
       ]
     },
     {
+      "condition": "[parameters('vnetEnabled')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "serviceVirtualNetwork",
@@ -12353,6 +12346,7 @@
       ]
     },
     {
+      "condition": "[parameters('vnetEnabled')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "servicePrivateEndpoint",
@@ -12494,6 +12488,7 @@
       ]
     },
     {
+      "condition": "[parameters('vnetEnabled')]",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "storagePrivateEndpoint",

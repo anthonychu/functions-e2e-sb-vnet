@@ -26,6 +26,8 @@ param serviceBusQueueName string = ''
 param serviceBusNamespaceName string = ''
 param vNetName string = ''
 
+param vnetEnabled bool
+
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
@@ -72,7 +74,7 @@ module processor './app/processor.bicep' = {
     identityClientId: processorUserAssignedIdentity.outputs.clientId
     appSettings: {
     }
-    virtualNetworkSubnetId: '${serviceVirtualNetwork.outputs.resourceId}/subnets/app'
+    virtualNetworkSubnetId: vnetEnabled ? '${serviceVirtualNetwork.outputs.resourceId}/subnets/app' : ''
     serviceBusQueueName: !empty(serviceBusQueueName) ? serviceBusQueueName : '${abbrs.serviceBusNamespacesQueues}${resourceToken}'
     serviceBusNamespaceFQDN: '${serviceBus.outputs.name}.servicebus.windows.net'
     deploymentStorageContainerName: deploymentStorageContainerName
@@ -87,10 +89,12 @@ module storage 'br/public:avm/res/storage/storage-account:0.8.3' = {
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: location
     tags: tags
-    publicNetworkAccess: 'Disabled'
-    networkAcls: {
+    publicNetworkAccess: vnetEnabled ? 'Disabled' : 'Enabled'
+    networkAcls: vnetEnabled ? {
       defaultAction: 'Deny'
       bypass: 'None'
+    } : {
+      defaultAction: 'Allow'
     }
     blobServices: {
       containers: [
@@ -145,7 +149,7 @@ module serviceBus 'br/public:avm/res/service-bus/namespace:0.9.0' = {
     skuObject: {
       name: 'Premium'
     }
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: vnetEnabled ? 'Disabled' : 'Enabled'
     queues: [
       {
         name: !empty(serviceBusQueueName) ? serviceBusQueueName : '${abbrs.serviceBusNamespacesQueues}${resourceToken}'
@@ -167,7 +171,7 @@ module ServiceBusDataOwnerRoleAssignment 'app/servicebus-Access.bicep' = [for ro
 }]
 
 // Virtual Network & private endpoint
-module serviceVirtualNetwork 'br/public:avm/res/network/virtual-network:0.6.1' = {
+module serviceVirtualNetwork 'br/public:avm/res/network/virtual-network:0.6.1' = if (vnetEnabled) {
   name: 'serviceVirtualNetwork'
   scope: rg
   params: {
@@ -201,7 +205,7 @@ module serviceVirtualNetwork 'br/public:avm/res/network/virtual-network:0.6.1' =
   }
 }
 
-module servicePrivateEndpoint 'app/servicebus-privateEndpoint.bicep' = {
+module servicePrivateEndpoint 'app/servicebus-privateEndpoint.bicep' = if (vnetEnabled) {
   name: 'servicePrivateEndpoint'
   scope: rg
   params: {
@@ -213,7 +217,7 @@ module servicePrivateEndpoint 'app/servicebus-privateEndpoint.bicep' = {
   }
 }
 
-module storagePrivateEndpoint 'app/storage-PrivateEndpoint.bicep' = {
+module storagePrivateEndpoint 'app/storage-PrivateEndpoint.bicep' = if (vnetEnabled) {
   name: 'storagePrivateEndpoint'
   scope: rg
   params: {
