@@ -45,7 +45,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 }
 
 // User assigned managed identity to be used by the Function App to reach storage and service bus
-module processorUserAssignedIdentity './avm/managed-identity/user-assigned-identity.bicep' = {
+module processorUserAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
   name: 'processorUserAssignedIdentity'
   scope: rg
   params: {
@@ -63,7 +63,7 @@ module processor './app/processor.bicep' = {
     name: appName
     location: location
     tags: tags
-    applicationInsightsName: monitoring.outputs.applicationInsightsName
+    applicationInsightsName: monitoring.outputs.name
     appServicePlanId: appServicePlan.outputs.resourceId
     runtimeName: 'python'
     runtimeVersion: '3.10'
@@ -72,15 +72,15 @@ module processor './app/processor.bicep' = {
     identityClientId: processorUserAssignedIdentity.outputs.clientId
     appSettings: {
     }
-    virtualNetworkSubnetId: serviceVirtualNetwork.outputs.appSubnetID
-    serviceBusQueueName: serviceBus.outputs.serviceBusQueueName
-    serviceBusNamespaceFQDN: serviceBus.outputs.serviceBusNamespaceFQDN
+    virtualNetworkSubnetId: '${serviceVirtualNetwork.outputs.resourceId}/subnets/app'
+    serviceBusQueueName: !empty(serviceBusQueueName) ? serviceBusQueueName : '${abbrs.serviceBusNamespacesQueues}${resourceToken}'
+    serviceBusNamespaceFQDN: '${serviceBus.outputs.name}.servicebus.windows.net'
     deploymentStorageContainerName: deploymentStorageContainerName
   }
 }
 
 // Backing storage for Azure functions processor
-module storage './avm/storage/storage-account.bicep' = {
+module storage 'br/public:avm/res/storage/storage-account:0.8.3' = {
   name: 'storage'
   scope: rg
   params: {
@@ -90,6 +90,7 @@ module storage './avm/storage/storage-account.bicep' = {
     publicNetworkAccess: 'Disabled'
     networkAcls: {
       defaultAction: 'Deny'
+      bypass: 'None'
     }
     blobServices: {
       containers: [
@@ -101,6 +102,7 @@ module storage './avm/storage/storage-account.bicep' = {
     }
     skuName: 'Standard_LRS'
     allowSharedKeyAccess: false
+    minimumTlsVersion: 'TLS1_2'
   }
 }
 
@@ -117,7 +119,7 @@ module storageBlobDataOwnerRoleDefinitionApi 'app/storage-Access.bicep' = [for r
   }
 }]
 
-module appServicePlan './avm/web/serverfarm.bicep' = {
+module appServicePlan 'br/public:avm/res/web/serverfarm:0.1.1' = {
   name: 'appserviceplan'
   scope: rg
   params: {
@@ -128,19 +130,21 @@ module appServicePlan './avm/web/serverfarm.bicep' = {
       name: 'FC1'
       tier: 'FlexConsumption'
     }
-    kind: 'FunctionApp'
+    reserved: true
   }
 }
 
 // Service Bus
-module serviceBus './avm/service-bus/namespace.bicep' = {
+module serviceBus 'br/public:avm/res/service-bus/namespace:0.9.0' = {
   name: 'serviceBus'
   scope: rg
   params: {
     name: !empty(serviceBusNamespaceName) ? serviceBusNamespaceName : '${abbrs.serviceBusNamespaces}${resourceToken}'
     location: location
     tags: tags
-    skuName: 'Premium'
+    skuObject: {
+      name: 'Premium'
+    }
     publicNetworkAccess: 'Disabled'
     queues: [
       {
@@ -156,14 +160,14 @@ module ServiceBusDataOwnerRoleAssignment 'app/servicebus-Access.bicep' = [for ro
   name: 'sbRoleAssignment${roleId}'
   scope: rg
   params: {
-    serviceBusNamespaceName: serviceBus.outputs.serviceBusNamespace
+    serviceBusNamespaceName: serviceBus.outputs.name
     roleDefinitionId: roleId
     principalIds: principalIds
   }
 }]
 
 // Virtual Network & private endpoint
-module serviceVirtualNetwork './avm/network/virtual-network.bicep' = {
+module serviceVirtualNetwork 'br/public:avm/res/network/virtual-network:0.6.1' = {
   name: 'serviceVirtualNetwork'
   scope: rg
   params: {
@@ -177,28 +181,19 @@ module serviceVirtualNetwork './avm/network/virtual-network.bicep' = {
       {
         name: 'sb'
         addressPrefix: '10.0.1.0/24'
-        delegations: []
         privateEndpointNetworkPolicies: 'Disabled'
         privateLinkServiceNetworkPolicies: 'Enabled'
       }
       {
         name: 'app'
         addressPrefix: '10.0.2.0/23'
-        delegations: [
-          {
-            name: 'delegation'
-            properties: {
-              serviceName: 'Microsoft.App/environments'
-            }
-          }
-        ]
         privateEndpointNetworkPolicies: 'Disabled'
         privateLinkServiceNetworkPolicies: 'Enabled'
+        delegation: 'Microsoft.App/environments'
       }
       {
         name: 'st'
         addressPrefix: '10.0.4.0/24'
-        delegations: []
         privateEndpointNetworkPolicies: 'Disabled'
         privateLinkServiceNetworkPolicies: 'Enabled'
       }
@@ -213,8 +208,8 @@ module servicePrivateEndpoint 'app/servicebus-privateEndpoint.bicep' = {
     location: location
     tags: tags
     virtualNetworkName: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
-    subnetName: serviceVirtualNetwork.outputs.sbSubnetName
-    sbNamespaceId: serviceBus.outputs.namespaceId
+    subnetName: 'sb'
+    sbNamespaceId: serviceBus.outputs.resourceId
   }
 }
 
@@ -225,25 +220,37 @@ module storagePrivateEndpoint 'app/storage-PrivateEndpoint.bicep' = {
     location: location
     tags: tags
     virtualNetworkName: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
-    subnetName: serviceVirtualNetwork.outputs.stSubnetName
+    subnetName: 'st'
     resourceName: storage.outputs.name
   }
 }
 
-// Monitor application with Azure Monitor
-module monitoring './avm/monitor/monitoring.bicep' = {
-  name: 'monitoring'
+// Monitor application with Azure Monitor - Log Analytics and Application Insights
+module logAnalytics 'br/public:avm/res/operational-insights/workspace:0.11.1' = {
+  name: '${uniqueString(deployment().name, location)}-loganalytics'
   scope: rg
   params: {
-    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-    applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    name: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     location: location
     tags: tags
+    dataRetention: 30
+  }
+}
+
+module monitoring 'br/public:avm/res/insights/component:0.6.0' = {
+  name: '${uniqueString(deployment().name, location)}-appinsights'
+  scope: rg
+  params: {
+    name: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    location: location
+    tags: tags
+    workspaceResourceId: logAnalytics.outputs.resourceId
+    disableLocalAuth: true
   }
 }
 
 // App outputs
-output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.name
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output SERVICE_PROCESSOR_NAME string = processor.outputs.SERVICE_PROCESSOR_NAME
