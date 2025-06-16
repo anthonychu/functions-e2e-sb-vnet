@@ -35,7 +35,7 @@ var appName = !empty(processorServiceName) ? processorServiceName : '${abbrs.web
 var deploymentStorageContainerName = 'app-package-${take(appName, 32)}-${take(resourceToken, 7)}'
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
-var principalIds = [processorUserAssignedIdentity.outputs.identityPrincipalId, principalId]
+var principalIds = [processorUserAssignedIdentity.outputs.principalId, principalId]
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -45,13 +45,13 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 }
 
 // User assigned managed identity to be used by the Function App to reach storage and service bus
-module processorUserAssignedIdentity './core/identity/userAssignedIdentity.bicep' = {
+module processorUserAssignedIdentity './avm/managed-identity/user-assigned-identity.bicep' = {
   name: 'processorUserAssignedIdentity'
   scope: rg
   params: {
+    name: !empty(processorUserAssignedIdentityName) ? processorUserAssignedIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}processor-${resourceToken}'
     location: location
     tags: tags
-    identityName: !empty(processorUserAssignedIdentityName) ? processorUserAssignedIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}processor-${resourceToken}'
   }
 }
 
@@ -64,12 +64,12 @@ module processor './app/processor.bicep' = {
     location: location
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
-    appServicePlanId: appServicePlan.outputs.id
+    appServicePlanId: appServicePlan.outputs.resourceId
     runtimeName: 'python'
     runtimeVersion: '3.10'
     storageAccountName: storage.outputs.name
-    identityId: processorUserAssignedIdentity.outputs.identityId
-    identityClientId: processorUserAssignedIdentity.outputs.identityClientId
+    identityId: processorUserAssignedIdentity.outputs.resourceId
+    identityClientId: processorUserAssignedIdentity.outputs.clientId
     appSettings: {
     }
     virtualNetworkSubnetId: serviceVirtualNetwork.outputs.appSubnetID
@@ -80,7 +80,7 @@ module processor './app/processor.bicep' = {
 }
 
 // Backing storage for Azure functions processor
-module storage './core/storage/storage-account.bicep' = {
+module storage './avm/storage/storage-account.bicep' = {
   name: 'storage'
   scope: rg
   params: {
@@ -91,7 +91,16 @@ module storage './core/storage/storage-account.bicep' = {
     networkAcls: {
       defaultAction: 'Deny'
     }
-    containers: [{name: deploymentStorageContainerName}]
+    blobServices: {
+      containers: [
+        {
+          name: deploymentStorageContainerName
+          publicAccess: 'None'
+        }
+      ]
+    }
+    skuName: 'Standard_LRS'
+    allowSharedKeyAccess: false
   }
 }
 
@@ -108,7 +117,7 @@ module storageBlobDataOwnerRoleDefinitionApi 'app/storage-Access.bicep' = [for r
   }
 }]
 
-module appServicePlan './core/host/appserviceplan.bicep' = {
+module appServicePlan './avm/web/serverfarm.bicep' = {
   name: 'appserviceplan'
   scope: rg
   params: {
@@ -119,18 +128,25 @@ module appServicePlan './core/host/appserviceplan.bicep' = {
       name: 'FC1'
       tier: 'FlexConsumption'
     }
+    kind: 'FunctionApp'
   }
 }
 
 // Service Bus
-module serviceBus 'core/message/servicebus.bicep' = {
+module serviceBus './avm/service-bus/namespace.bicep' = {
   name: 'serviceBus'
   scope: rg
   params: {
+    name: !empty(serviceBusNamespaceName) ? serviceBusNamespaceName : '${abbrs.serviceBusNamespaces}${resourceToken}'
     location: location
     tags: tags
-    serviceBusNamespaceName: !empty(serviceBusNamespaceName) ? serviceBusNamespaceName : '${abbrs.serviceBusNamespaces}${resourceToken}'
-    serviceBusQueueName : !empty(serviceBusQueueName) ? serviceBusQueueName : '${abbrs.serviceBusNamespacesQueues}${resourceToken}'
+    skuName: 'Premium'
+    publicNetworkAccess: 'Disabled'
+    queues: [
+      {
+        name: !empty(serviceBusQueueName) ? serviceBusQueueName : '${abbrs.serviceBusNamespacesQueues}${resourceToken}'
+      }
+    ]
   }
 }
 
@@ -182,14 +198,14 @@ module storagePrivateEndpoint 'app/storage-PrivateEndpoint.bicep' = {
 }
 
 // Monitor application with Azure Monitor
-module monitoring './core/monitor/monitoring.bicep' = {
+module monitoring './avm/monitor/monitoring.bicep' = {
   name: 'monitoring'
   scope: rg
   params: {
-    location: location
-    tags: tags
     logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    location: location
+    tags: tags
   }
 }
 
