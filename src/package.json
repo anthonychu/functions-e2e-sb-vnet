@@ -1,0 +1,19 @@
+{
+  "name": "functions-e2e-sb-vnet",
+  "version": "1.0.0",
+  "description": "Azure Functions Service Bus queue trigger with VNet integration",
+  "main": "dist/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && func start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "azure-functions-core-tools": "^4.0.4670",
+    "typescript": "^5.0.0"
+  }
+}
