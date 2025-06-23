@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "7505188658077028784"
+      "templateHash": "10159962595344918108"
     }
   },
   "parameters": {
@@ -16380,7 +16380,7 @@
   "outputs": {
     "APPLICATIONINSIGHTS_CONNECTION_STRING": {
       "type": "string",
-      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', format('{0}-appinsights', uniqueString(deployment().name, parameters('location')))), '2022-09-01').outputs.name.value]"
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', format('{0}-appinsights', uniqueString(deployment().name, parameters('location')))), '2022-09-01').outputs.connectionString.value]"
     },
     "AZURE_LOCATION": {
       "type": "string",
